@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "Weather MCP Server": {
+      "command": "C:/Users/abaruwa/AppData/Local/anaconda3/envs/AgenticAI/python.exe",
+      "args": ["mcp_server.py"],
+      "env": {
+        "PYTHONPATH": ".",
+        "DEBUG": "true"
+      }
+    }
+  }
+}
