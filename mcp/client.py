@@ -1,7 +1,7 @@
 from azure.ai.inference import ChatCompletionsClient
-from azure.ai.inference.models import SytemMessage, UserMessage
+from azure.ai.inference.models import SystemMessage, UserMessage
 from azure.core.credentials import AzureKeyCredential;
-from mcp import ClientSession, StdioServerParameters, types
+from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
 import asyncio
 import json
@@ -35,11 +35,12 @@ async def run():
             for resource in resources:
                 logger.info(f"Resource: {resource}")
 
+            functions = []
             # list available tools 
             tools_obj = await session.list_tools()
             logger.info("LISTING TOOLS")
             for tool in tools_obj.tools:
-                logger.info(f"Tool: {tool.inputShema["properties"]}")
+                logger.info(f"Tool: {tool.inputSchema['properties']}")
                 functions.append(convert_to_llm_tool(tool))
 
             # Read a resource
@@ -54,6 +55,17 @@ async def run():
             logger.info("Forecasting Weather")
             result = await session.call_tool("get_forecast", arguments={"location": "Lagos", "days": 1})
             logger.info(result.content)
+
+            prompt = "what is the weather like in cote d'ivoire?"
+
+            # ask LLM what tools to call, if any
+            functions_to_call = call_llm(prompt, functions)
+
+            # call suggested functions
+            for f in functions_to_call:
+                result = await session.call_tool(f["name"], arguments = f["args"])
+                logger.info("TOOLS result: ", result.content)
+
 
 def convert_to_llm_tool(tool):
     tool_schema = {
@@ -71,7 +83,6 @@ def convert_to_llm_tool(tool):
     return tool_schema
 
 # llm 
-
 def call_llm(prompt, functions):
     token = os.environ["GITHUB_TOKEN"]
     endpoint = "https://models.inference.ai.azure.com"
@@ -107,7 +118,11 @@ def call_llm(prompt, functions):
         for tool_call in response_message.tool_calls:
             logger.info(f"TOOL: ", tool_call)
             name = tool_call.function.name
-            args = json.loads(tool_call, function.arguments)
-            functions_to_call.append({ "name": name, "args", arg})
+            args = json.loads(tool_call.function.arguments)
+            functions_to_call.append({ "name": name, "args": args})
+    
+    return functions_to_call
+
+
 if __name__ == "__main__":
     asyncio.run(run())
