@@ -1,0 +1,14 @@
+{
+  "inputs":[],
+  "servers": {
+    "weather_server": {
+      "type": "mcp",
+      "url": "https://api.weather.com/v3/wx/conditions/current",
+      "command": "python",
+      "args": [
+        "mcp_server.py"
+      ]
+    }
+
+  }
+}
